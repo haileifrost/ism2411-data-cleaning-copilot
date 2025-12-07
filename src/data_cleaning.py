@@ -4,38 +4,61 @@
 
 import pandas as pd
 
-# Load the raw sales data
-# Source: data/raw/sales_data_raw.csv
-raw_path = 'data/raw/sales_data_raw.csv'
-processed_path = 'data/processed/sales_data_clean.csv'
-df = pd.read_csv(raw_path)
+# Function to load data from a CSV file into a pandas DataFrame.
+# Should handle missing file errors gracefully and return a DataFrame.
+def load_data(file_path: str):
+    try:
+        df = pd.read_csv(file_path)
+        print(f"Loaded data from {file_path}, shape: {df.shape}")
+        return df
+    except FileNotFoundError:
+        print(f"Error: {file_path} not found.")
+        return pd.DataFrame()
 
-# Standardize column names
-# Why: Consistent column names simplify downstream analysis and automation
-df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
+# Function to standardize and clean column names in a DataFrame.
+# Should make names lowercase, strip whitespace, and replace spaces with underscores.
+def clean_column_names(df):
+    df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
+    print("Column names standardized.")
+    return df
 
-# Clean up product and category columns
-# What: Strip leading/trailing spaces
-# Why: Prevent mismatches due to accidental whitespace
-if 'product' in df.columns:
-    df['product'] = df['product'].str.strip()
-if 'category' in df.columns:
-    df['category'] = df['category'].str.strip()
+# Function to handle missing values in price and quantity columns.
+# Should convert to numeric and fill missing values with zero for consistency.
+def handle_missing_values(df):
+    for field in ['price', 'quantity']:
+        if field in df.columns:
+            df[field] = pd.to_numeric(df[field], errors='coerce').fillna(0)
+    print("Missing values handled.")
+    return df
 
-# Handle missing prices and quantities
-# What: Fill missing with zeros
-# Why: We want a consistent policy; using 0 avoids dropping too much data
-for field in ['price', 'quantity']:
-    if field in df.columns:
-        df[field] = pd.to_numeric(df[field], errors='coerce').fillna(0)
+# Function to remove rows with negative price or quantity.
+# Should filter out invalid entries where either value is less than zero.
+def remove_invalid_rows(df):
+    for field in ['price', 'quantity']:
+        if field in df.columns:
+            df = df[df[field] >= 0]
+    print("Invalid rows removed.")
+    return df
 
-# Remove rows with negative quantity or negative price
-# What: Drop rows with negative values
-# Why: Negative values are likely data entry errors and invalid for analysis
-for field in ['price', 'quantity']:
-    if field in df.columns:
-        df = df[df[field] >= 0]
+def main():
+    raw_path = 'data/raw/sales_data_raw.csv'
+    processed_path = 'data/processed/sales_data_clean.csv'
 
-# Save the cleaned data to processed file
-df.to_csv(processed_path, index=False)
-print(f"Cleaned data written to {processed_path}")
+    # Load and process data step by step
+    df = load_data(raw_path)
+    df = clean_column_names(df)
+
+    # Clean up product/category whitespace
+    if 'product' in df.columns:
+        df['product'] = df['product'].str.strip()
+    if 'category' in df.columns:
+        df['category'] = df['category'].str.strip()
+
+    df = handle_missing_values(df)
+    df = remove_invalid_rows(df)
+
+    df.to_csv(processed_path, index=False)
+    print(f"Cleaned data written to {processed_path}")
+
+if __name__ == "__main__":
+    main()
