@@ -62,7 +62,7 @@ def main():
     if __name__ == "__main__":
         raw_path = "data/raw/sales_data_raw.csv"
         cleaned_path = "data/processed/sales_data_clean.csv"
-
+# Copied and pasted from assignment requirements to ensure that the code works properly as intended.
         df_raw = load_data(raw_path)
         df_clean = clean_column_names(df_raw)
         df_clean = handle_missing_values(df_clean)
